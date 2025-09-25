@@ -6,7 +6,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/jellevandenhooff/gosim/internal/simulation"
+	"github.com/glycerine/gosim/internal/simulation"
 )
 
 //go:nocheckptr

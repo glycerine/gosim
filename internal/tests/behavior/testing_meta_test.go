@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/jellevandenhooff/gosim/gosimruntime"
-	"github.com/jellevandenhooff/gosim/metatesting"
+	"github.com/glycerine/gosim/gosimruntime"
+	"github.com/glycerine/gosim/metatesting"
 )
 
 func TestTFatalAborts(t *testing.T) {

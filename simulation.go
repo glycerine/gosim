@@ -3,8 +3,8 @@ package gosim
 import (
 	"time"
 
-	"github.com/jellevandenhooff/gosim/gosimruntime"
-	"github.com/jellevandenhooff/gosim/internal/simulation"
+	"github.com/glycerine/gosim/gosimruntime"
+	"github.com/glycerine/gosim/internal/simulation"
 )
 
 // IsSim returns if the program is running inside of a gosim simulation.

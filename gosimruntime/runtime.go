@@ -16,8 +16,8 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/jellevandenhooff/gosim/internal/coro"
-	"github.com/jellevandenhooff/gosim/internal/race"
+	"github.com/glycerine/gosim/internal/coro"
+	"github.com/glycerine/gosim/internal/race"
 )
 
 type constErr struct {

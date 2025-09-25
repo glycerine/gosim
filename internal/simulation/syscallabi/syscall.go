@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	"github.com/jellevandenhooff/gosim/gosimruntime"
-	"github.com/jellevandenhooff/gosim/internal/race"
+	"github.com/glycerine/gosim/gosimruntime"
+	"github.com/glycerine/gosim/internal/race"
 )
 
 // Marked go:norace so simulation can read Goroutine.

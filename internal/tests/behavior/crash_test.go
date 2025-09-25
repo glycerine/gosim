@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jellevandenhooff/gosim"
-	"github.com/jellevandenhooff/gosim/gosimruntime"
+	"github.com/glycerine/gosim"
+	"github.com/glycerine/gosim/gosimruntime"
 )
 
 func TestCrashTimer(t *testing.T) {

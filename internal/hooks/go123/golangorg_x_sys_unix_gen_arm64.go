@@ -6,7 +6,7 @@ package go123
 import (
 	"unsafe"
 
-	"github.com/jellevandenhooff/gosim/internal/simulation"
+	"github.com/glycerine/gosim/internal/simulation"
 )
 
 // prevent unused imports

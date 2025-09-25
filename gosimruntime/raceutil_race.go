@@ -5,7 +5,7 @@ package gosimruntime
 import (
 	"unsafe"
 
-	"github.com/jellevandenhooff/gosim/internal/race"
+	"github.com/glycerine/gosim/internal/race"
 )
 
 const debugRaceToken = false

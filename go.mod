@@ -1,4 +1,4 @@
-module github.com/jellevandenhooff/gosim
+module github.com/glycerine/gosim
 
 go 1.23.2
 

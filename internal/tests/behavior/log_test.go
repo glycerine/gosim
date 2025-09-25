@@ -14,9 +14,9 @@ import (
 	zapslog "github.com/tommoulard/zap-slog"
 	"go.uber.org/zap"
 
-	"github.com/jellevandenhooff/gosim"
-	"github.com/jellevandenhooff/gosim/gosimruntime"
-	"github.com/jellevandenhooff/gosim/internal/gosimlog"
+	"github.com/glycerine/gosim"
+	"github.com/glycerine/gosim/gosimruntime"
+	"github.com/glycerine/gosim/internal/gosimlog"
 )
 
 func TestLogSLog(t *testing.T) {

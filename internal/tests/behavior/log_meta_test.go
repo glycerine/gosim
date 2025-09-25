@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/jellevandenhooff/gosim/internal/gosimlog"
-	"github.com/jellevandenhooff/gosim/internal/race"
-	"github.com/jellevandenhooff/gosim/metatesting"
+	"github.com/glycerine/gosim/internal/gosimlog"
+	"github.com/glycerine/gosim/internal/race"
+	"github.com/glycerine/gosim/metatesting"
 )
 
 func parseLog(t *testing.T, log []byte) []map[string]any {
