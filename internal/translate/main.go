@@ -47,7 +47,79 @@ var skippedPackagesGo123 = map[string]bool{
 
 	"unique": true, // XXX: yes
 
+	// Go 1.25 reorganized crypto into crypto/internal/fips140/* sub-packages.
+	// These packages use 2-part //go:linkname directives (fatal, setIndicator,
+	// getIndicator, sha3Unwrap, etc.) pointing into the runtime. When translated,
+	// those link targets become undefined. Since gosim doesn't need FIPS-140
+	// compliance, we skip all fips140-related packages entirely.
+	// All crypto/* packages that import these internal packages are also skipped;
+	// they deal only with byte-slice computations and don't interact with gosim's
+	// simulated scheduling/time/filesystem — the simulation intercepts at the
+	// syscall level instead.
+	"crypto/internal/fips140":                    true,
+	"crypto/internal/fips140/alias":              true,
+	"crypto/internal/fips140/subtle":             true,
+	"crypto/internal/fips140/sha256":             true,
+	"crypto/internal/fips140/sha3":               true,
+	"crypto/internal/fips140/sha512":             true,
+	"crypto/internal/fips140/aes":                true,
+	"crypto/internal/fips140/aes/gcm":            true,
+	"crypto/internal/fips140/nistec":             true,
+	"crypto/internal/fips140/nistec/fiat":        true,
+	"crypto/internal/fips140/bigmod":             true,
+	"crypto/internal/fips140/ecdsa":              true,
+	"crypto/internal/fips140/edwards25519/field": true,
+	"crypto/internal/fips140/check":              true,
+	"crypto/internal/fips140/drbg":               true,
+	"crypto/internal/fips140/hmac":               true,
+	"crypto/internal/fips140/hkdf":               true,
+	"crypto/internal/fips140/mlkem":              true,
+	"crypto/internal/fips140/pbkdf2":             true,
+	"crypto/internal/fips140/rsa":                true,
+	"crypto/internal/fips140/tls12":              true,
+	"crypto/internal/fips140/tls13":              true,
+	"crypto/internal/fips140cache":               true,
+	"crypto/internal/fips140hash":                true,
+	"crypto/internal/fips140only":                true,
+	"crypto/internal/fips140deps/godebug":        true,
+	"crypto/internal/fips140deps/byteorder":      true,
+	"crypto/internal/fips140deps/cpu":            true,
+	"crypto/internal/sysrand":                    true,
+	// Non-internal crypto packages that transitively import fips140 internals.
+	// All pure computation on byte slices; no gosim scheduling needed.
+	"crypto/aes":     true,
+	"crypto/cipher":  true,
+	"crypto/des":     true,
+	"crypto/dsa":     true,
+	"crypto/ecdh":    true,
+	"crypto/ecdsa":   true,
+	"crypto/ed25519": true,
+	"crypto/elliptic": true,
+	"crypto/fips140": true,
+	"crypto/hkdf":    true,
+	"crypto/hmac":    true,
+	"crypto/md5":     true,
+	"crypto/mlkem":   true,
+	"crypto/pbkdf2":  true,
+	"crypto/rand":    true,
+	"crypto/rc4":     true,
+	"crypto/rsa":     true,
+	"crypto/sha1":    true,
+	"crypto/sha256":  true,
+	"crypto/sha3":    true,
+	"crypto/sha512":  true,
+	"crypto/subtle":  true,
+	"crypto/tls":     true,
+	// boring and nistec are also now covered by skipping the above
+	"crypto/internal/boring/sig": true,
+	"crypto/internal/nistec":     true,
+
 	"testing":                     true,
+	"testing/synctest":            true,
+	// "internal/synctest" is replaced by gosim's stub (synctestPackage).
+	// The stdlib internal/synctest cannot be imported outside stdlib, so we
+	// skip translating it and redirect imports to our stub via replacedPkgs.
+	"internal/synctest":           true,
 	"testing/internal/testdeps":   true,
 	"internal/reflectlite":        true,
 	gosimruntimePackage:           true,
@@ -57,14 +129,6 @@ var skippedPackagesGo123 = map[string]bool{
 }
 
 var keepAsmPackagesGo123 = map[string]bool{
-	"crypto/aes":                                   true,
-	"crypto/internal/boring/sig":                   true,
-	"crypto/internal/nistec":                       true,
-	"crypto/md5":                                   true,
-	"crypto/sha1":                                  true,
-	"crypto/sha256":                                true,
-	"crypto/sha512":                                true,
-	"crypto/subtle":                                true,
 	"crypto/internal/bigmod":                       true,
 	"crypto/internal/edwards25519/field":           true,
 	"vendor/golang.org/x/crypto/chacha20":          true,
@@ -77,6 +141,12 @@ var keepAsmPackagesGo123 = map[string]bool{
 	"net/http": true, // XXX: linkname roundtrip nonsense
 
 	"github.com/cespare/xxhash/v2": true,
+
+	// internal/runtime/sys contains pure compiler intrinsics (GetCallerPC,
+	// GetCallerSP, GetClosurePtr) and architecture-specific helpers (EnableDIT,
+	// DisableDIT). None interact with gosim scheduling, so pass them through.
+	// This package became a direct dependency of crypto/subtle in Go 1.25.
+	"internal/runtime/sys": true,
 }
 
 var PublicExportHacks = map[string][]string{
@@ -100,6 +170,7 @@ const (
 	reflectPackage      = gosimModPath + "/internal/reflect"
 	simulationPackage   = gosimModPath + "/internal/simulation"
 	testingPackage      = gosimModPath + "/internal/testing"
+	synctestPackage     = gosimModPath + "/internal/synctest"
 )
 
 var TranslatedRuntimePackages = []string{
@@ -107,6 +178,7 @@ var TranslatedRuntimePackages = []string{
 	reflectPackage,
 	simulationPackage,
 	testingPackage,
+	synctestPackage,
 }
 
 const (
@@ -373,10 +445,11 @@ func buildReplacePackagesAndPackageNames(convertPkgs, allPkgs []*packages.Packag
 		packageNames[outputPackage] = packageNames[inputPackage]
 	}
 
-	// override reflect and testing
+	// override reflect, testing, and synctest
 	replacedPkgs["reflect"] = replacedPkgs[reflectPackage]
 	replacedPkgs["internal/reflectlite"] = replacedPkgs[reflectPackage]
 	replacedPkgs["testing"] = replacedPkgs[testingPackage]
+	replacedPkgs["internal/synctest"] = replacedPkgs[synctestPackage]
 
 	// handle the linkname in the os package
 	replacedPkgs["net"] = "translated/" + gosimtool.ReplaceSpecialPackages("net")

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat:*)",
+      "Bash(gosim version:*)",
+      "Bash(done)",
+      "Bash(# Trace the dependency chain from math/rand to fips140 go list -deps math/rand)",
+      "Bash(go list:*)",
+      "Bash(# Check if examples has test deps that include fips140 go list -deps -test ./examples/...)",
+      "Bash(# Check what the gosim translated deps will be for examples # The translator runs with GOOS=linux, so let''s check linux deps GOOS=linux go list -deps -test ./examples/...)",
+      "Bash(# Check what the translator generates for existing keepAsm packages ls /Users/jaten/go/src/github.com/glycerine/gosim/.gosim/translated/)",
+      "Bash(go install:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

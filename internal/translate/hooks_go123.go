@@ -113,6 +113,7 @@ var hooksGo123 = map[packageSelector]packageSelector{
 	{Pkg: "sync", Selector: "runtime_SemacquireMutex"}:     {Pkg: hooksGo123Package},
 	{Pkg: "sync", Selector: "runtime_SemacquireRWMutex"}:   {Pkg: hooksGo123Package},
 	{Pkg: "sync", Selector: "runtime_SemacquireRWMutexR"}:  {Pkg: hooksGo123Package},
+	{Pkg: "sync", Selector: "runtime_SemacquireWaitGroup"}: {Pkg: hooksGo123Package}, // Go 1.25
 	{Pkg: "sync", Selector: "runtime_Semrelease"}:          {Pkg: hooksGo123Package},
 	{Pkg: "sync", Selector: "runtime_StoreReluintptr"}:     {Pkg: hooksGo123Package},
 	{Pkg: "sync", Selector: "runtime_canSpin"}:             {Pkg: hooksGo123Package},
@@ -128,6 +129,19 @@ var hooksGo123 = map[packageSelector]packageSelector{
 	{Pkg: "sync", Selector: "runtime_randn"}:               {Pkg: hooksGo123Package},
 	{Pkg: "sync", Selector: "runtime_registerPoolCleanup"}: {Pkg: hooksGo123Package},
 	{Pkg: "sync", Selector: "throw"}:                       {Pkg: hooksGo123Package},
+
+	// Go 1.25: sync internals moved to internal/sync.
+	{Pkg: "internal/sync", Selector: "runtime_SemacquireMutex"}: {Pkg: hooksGo123Package},
+	{Pkg: "internal/sync", Selector: "runtime_Semrelease"}:      {Pkg: hooksGo123Package},
+	{Pkg: "internal/sync", Selector: "runtime_canSpin"}:         {Pkg: hooksGo123Package},
+	{Pkg: "internal/sync", Selector: "runtime_doSpin"}:          {Pkg: hooksGo123Package},
+	{Pkg: "internal/sync", Selector: "runtime_nanotime"}:        {Pkg: hooksGo123Package},
+	{Pkg: "internal/sync", Selector: "throw"}:                   {Pkg: hooksGo123Package},
+	{Pkg: "internal/sync", Selector: "fatal"}:                   {Pkg: hooksGo123Package},
+
+	// Go 1.25: weak package for weak pointer support.
+	{Pkg: "weak", Selector: "runtime_registerWeakPointer"}: {Pkg: hooksGo123Package},
+	{Pkg: "weak", Selector: "runtime_makeStrongFromWeak"}:  {Pkg: hooksGo123Package},
 
 	{Pkg: "sync/atomic", Selector: "AddInt32"}:              {Pkg: hooksGo123Package},
 	{Pkg: "sync/atomic", Selector: "AddInt64"}:              {Pkg: hooksGo123Package},
@@ -196,12 +210,15 @@ var hooksGo123 = map[packageSelector]packageSelector{
 	// amd64 only?
 	{Pkg: "syscall", Selector: "gettimeofday"}: {Pkg: hooksGo123Package},
 
-	{Pkg: "time", Selector: "Sleep"}:       {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "now"}:         {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "newTimer"}:    {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "resetTimer"}:  {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "runtimeNano"}: {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "stopTimer"}:   {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "Sleep"}:            {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "now"}:              {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "newTimer"}:         {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "resetTimer"}:       {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "runtimeNano"}:      {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "stopTimer"}:        {Pkg: hooksGo123Package},
+	// Go 1.25: runtimeNow replaced now on Linux; runtimeIsBubbled added for synctest.
+	{Pkg: "time", Selector: "runtimeNow"}:       {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "runtimeIsBubbled"}: {Pkg: hooksGo123Package},
 }
 
 var hooksGensyscallGo123ByArch = map[string]map[packageSelector]packageSelector{}
