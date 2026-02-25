@@ -138,6 +138,10 @@ func InternalSync_runtime_nanotime() int64 {
 	return gosimruntime.Nanotime()
 }
 
+func InternalSync_runtime_rand() uint64 {
+	return gosimruntime.Fastrand64()
+}
+
 func InternalSync_throw(str string) {
 	panic(str)
 }

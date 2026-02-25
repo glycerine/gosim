@@ -283,6 +283,15 @@ func (t *packageTranslator) rewriteMapLen(c *dstutil.Cursor) {
 }
 
 func (t *packageTranslator) rewriteMapType(c *dstutil.Cursor) {
+	// internal/sync uses `var m map[K]V` solely for abi.TypeOf type
+	// introspection in HashTrieMap.initSlow. Do not rewrite map types there;
+	// the real map type is required for abi.TypeOf(m).MapType() to return a
+	// non-nil *abi.MapType. There are no gosim-map operations on maps in
+	// internal/sync (the variable is never indexed, ranged, or made).
+	if t.pkgPath == "internal/sync" {
+		return
+	}
+
 	// map type
 	if mapType, ok := c.Node().(*dst.MapType); ok {
 		c.Replace(&dst.IndexListExpr{

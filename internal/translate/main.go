@@ -114,6 +114,28 @@ var skippedPackagesGo123 = map[string]bool{
 	"crypto/internal/boring/sig": true,
 	"crypto/internal/nistec":     true,
 
+	// net/http uses crypto/tls (skipped) which uses real net.Addr/time.Time.
+	// Translating net/http causes type mismatches between translated/net.Conn
+	// and net.Conn. Since gosim's simulation intercepts at the syscall layer,
+	// skipping net/http allows user code to use it normally while network
+	// syscalls are still intercepted by the simulated OS.
+	// XXX: This means HTTP simulation does not work via gosim (no syscall hooks
+	// for net/http's real runtime). Fixing requires translating crypto/tls, which
+	// is blocked by crypto/internal/fips140/* internal package import restrictions.
+	"net/http":         true,
+	"net/http/httputil": true, // uses real net/http types
+	// crypto/x509 uses real crypto types (rsa, ecdsa, etc.) which are skipped.
+	// Translating it causes type mismatches with real crypto.Signer etc.
+	"crypto/x509":      true,
+	"crypto/x509/pkix": true,
+	// golang.org/x/net/http2 uses real net/http types (req.Context() etc.)
+	// which clash with translated/context.Context.
+	"golang.org/x/net/http2": true,
+	// net/url uses //go:linkname setpath which causes issues when translated.
+	// Skipping it means all packages (translated and skipped alike) use the
+	// real net/url.URL type, avoiding mismatches with crypto/x509.URIs etc.
+	"net/url": true,
+
 	"testing":                     true,
 	"testing/synctest":            true,
 	// "internal/synctest" is replaced by gosim's stub (synctestPackage).
@@ -128,6 +150,18 @@ var skippedPackagesGo123 = map[string]bool{
 	// reflectPackage: true,
 }
 
+// skippedPrefixesGo123 lists import-path prefixes for packages that should be
+// treated as skipped (not translated). Any package whose path has one of these
+// prefixes will be omitted from translation and used as-is.
+//
+// google.golang.org/grpc uses crypto/tls (skipped) which uses real net.Conn.
+// Translating grpc would cause type mismatches throughout (net.Conn, context.Context,
+// time.Time, etc.) between translated and real types. Like net/http, gosim intercepts
+// at the syscall level, so real grpc still works under simulation.
+var skippedPrefixesGo123 = []string{
+	"google.golang.org/grpc",
+}
+
 var keepAsmPackagesGo123 = map[string]bool{
 	"crypto/internal/bigmod":                       true,
 	"crypto/internal/edwards25519/field":           true,
@@ -137,16 +171,24 @@ var keepAsmPackagesGo123 = map[string]bool{
 	"vendor/golang.org/x/crypto/sha3":              true,
 	"hash/crc32":                                   true,
 
-	"net/url":  true, // XXX: linkname setpath nonsense
-	"net/http": true, // XXX: linkname roundtrip nonsense
-
 	"github.com/cespare/xxhash/v2": true,
+
+	// internal/runtime/maps is the runtime's map implementation in Go 1.25+.
+	// It has many 2-part //go:linkname directives (fatal, rand, typedmemmove, etc.)
+	// pointing to the runtime. These become undefined when translated. Since
+	// gosim replaces map[K]V with gosimruntime.Map[K,V] everywhere, this package
+	// is never referenced by translated code directly.
+	"internal/runtime/maps": true,
 
 	// internal/runtime/sys contains pure compiler intrinsics (GetCallerPC,
 	// GetCallerSP, GetClosurePtr) and architecture-specific helpers (EnableDIT,
 	// DisableDIT). None interact with gosim scheduling, so pass them through.
 	// This package became a direct dependency of crypto/subtle in Go 1.25.
 	"internal/runtime/sys": true,
+
+	// internal/runtime/syscall/linux contains Syscall6, which is
+	// assembly-backed. Pass through as-is.
+	"internal/runtime/syscall/linux": true,
 }
 
 var PublicExportHacks = map[string][]string{
@@ -322,12 +364,27 @@ func classifyPackage(pkg *packages.Package) (packageKind, string) {
 	}
 }
 
-func collectImports(roots []*packages.Package, skip map[string]bool) []*packages.Package {
+// isSkippedByPrefix returns true if pkgPath equals a prefix exactly, or starts
+// with prefix + "/". This avoids false positives from module names that share
+// a common start (e.g. "grpc" vs "grpc-gateway").
+func isSkippedByPrefix(pkgPath string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if pkgPath == prefix || strings.HasPrefix(pkgPath, prefix+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// collectImports collects all packages reachable from roots, excluding those
+// in skip (exact match) and skipPrefixes (prefix match). Pass nil skipPrefixes
+// to collect all packages including those matching skippedPrefixesGo123.
+func collectImports(roots []*packages.Package, skip map[string]bool, skipPrefixes []string) []*packages.Package {
 	seen := make(map[*packages.Package]bool)
 	var order []*packages.Package
 	var visit func(pkg *packages.Package)
 	visit = func(pkg *packages.Package) {
-		if skip[pkg.PkgPath] || seen[pkg] {
+		if skip[pkg.PkgPath] || seen[pkg] || isSkippedByPrefix(pkg.PkgPath, skipPrefixes) {
 			return
 		}
 		seen[pkg] = true
@@ -519,8 +576,8 @@ func translatePackages(cache *cache.Cache, listPatterns []string, rootOutputDir 
 	checkGosimDep(modFile)
 	checkSingleModule(modPath, listedPkgs)
 
-	allPkgs := collectImports(listedPkgs, nil)
-	convertPkgs := collectImports(listedPkgs, skippedPackagesGo123)
+	allPkgs := collectImports(listedPkgs, nil, nil)
+	convertPkgs := collectImports(listedPkgs, skippedPackagesGo123, skippedPrefixesGo123)
 
 	packageGraph := newDepGraph()
 	basePkgs := make(map[string]*packages.Package)

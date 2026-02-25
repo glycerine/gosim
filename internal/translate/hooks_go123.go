@@ -136,6 +136,7 @@ var hooksGo123 = map[packageSelector]packageSelector{
 	{Pkg: "internal/sync", Selector: "runtime_canSpin"}:         {Pkg: hooksGo123Package},
 	{Pkg: "internal/sync", Selector: "runtime_doSpin"}:          {Pkg: hooksGo123Package},
 	{Pkg: "internal/sync", Selector: "runtime_nanotime"}:        {Pkg: hooksGo123Package},
+	{Pkg: "internal/sync", Selector: "runtime_rand"}:            {Pkg: hooksGo123Package},
 	{Pkg: "internal/sync", Selector: "throw"}:                   {Pkg: hooksGo123Package},
 	{Pkg: "internal/sync", Selector: "fatal"}:                   {Pkg: hooksGo123Package},
 
@@ -193,6 +194,7 @@ var hooksGo123 = map[packageSelector]packageSelector{
 	{Pkg: "syscall", Selector: "hasWaitingReaders"}:           {Pkg: hooksGo123Package},
 	{Pkg: "syscall", Selector: "rawSyscallNoError"}:           {Pkg: hooksGo123Package},
 	{Pkg: "syscall", Selector: "rawVforkSyscall"}:             {Pkg: hooksGo123Package},
+	{Pkg: "syscall", Selector: "runtimeClearenv"}:             {Pkg: hooksGo123Package},
 	{Pkg: "syscall", Selector: "runtimeSetenv"}:               {Pkg: hooksGo123Package},
 	{Pkg: "syscall", Selector: "runtimeUnsetenv"}:             {Pkg: hooksGo123Package},
 	{Pkg: "syscall", Selector: "runtime_AfterExec"}:           {Pkg: hooksGo123Package},
@@ -225,4 +227,8 @@ var hooksGensyscallGo123ByArch = map[string]map[packageSelector]packageSelector{
 
 var acceptedgo123Linknames = map[packageSelector]packageSelector{
 	{Pkg: "hash/maphash", Selector: "runtime_memhash"}: {Pkg: "runtime", Selector: "memhash"},
+	// Go 1.25: vgetrandom links to runtime.vgetrandom for fast random data via vDSO.
+	// The real runtime.vgetrandom is available in the translated binary; pass through.
+	{Pkg: "internal/syscall/unix", Selector: "vgetrandom"}: {Pkg: "runtime", Selector: "vgetrandom"},
+	{Pkg: "golang.org/x/sys/unix", Selector: "vgetrandom"}: {Pkg: "runtime", Selector: "vgetrandom"},
 }

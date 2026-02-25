@@ -44,6 +44,10 @@ func Syscall_Exit(code int) {
 	panic("gosim not implemented")
 }
 
+func Syscall_runtimeClearenv(env map[string]int) {
+	panic("gosim not implemented")
+}
+
 func Syscall_runtimeSetenv(k, v string) {
 	panic("gosim not implemented")
 }
