@@ -136,6 +136,22 @@ var skippedPackagesGo123 = map[string]bool{
 	// real net/url.URL type, avoiding mismatches with crypto/x509.URIs etc.
 	"net/url": true,
 
+	// internal/runtime/maps is the runtime's map implementation in Go 1.25+.
+	// It has many 2-part //go:linkname directives pointing to the runtime, and
+	// 3-part linknames that define runtime.mapaccess1 etc. Translating it causes
+	// duplicate symbol errors at link time (both translated and real versions
+	// define runtime.mapaccess1 etc.). Since gosim replaces map[K]V with
+	// gosimruntime.Map[K,V] everywhere, translated code never calls into this
+	// package directly anyway.
+	"internal/runtime/maps": true,
+	// hash/maphash imports internal/runtime/maps (Go 1.25+). Since
+	// internal/runtime/maps is skipped, translating hash/maphash would make it
+	// try to import the real internal/runtime/maps, which is an internal package
+	// inaccessible from the translated module. Skipping hash/maphash uses the
+	// real implementation; any non-determinism in seeding is acceptable since
+	// gosim's map determinism comes from gosimruntime.Map, not maphash.
+	"hash/maphash": true,
+
 	"testing":                     true,
 	"testing/synctest":            true,
 	// "internal/synctest" is replaced by gosim's stub (synctestPackage).
@@ -172,13 +188,6 @@ var keepAsmPackagesGo123 = map[string]bool{
 	"hash/crc32":                                   true,
 
 	"github.com/cespare/xxhash/v2": true,
-
-	// internal/runtime/maps is the runtime's map implementation in Go 1.25+.
-	// It has many 2-part //go:linkname directives (fatal, rand, typedmemmove, etc.)
-	// pointing to the runtime. These become undefined when translated. Since
-	// gosim replaces map[K]V with gosimruntime.Map[K,V] everywhere, this package
-	// is never referenced by translated code directly.
-	"internal/runtime/maps": true,
 
 	// internal/runtime/sys contains pure compiler intrinsics (GetCallerPC,
 	// GetCallerSP, GetClosurePtr) and architecture-specific helpers (EnableDIT,
