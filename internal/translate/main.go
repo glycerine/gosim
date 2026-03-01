@@ -47,6 +47,12 @@ var skippedPackagesGo123 = map[string]bool{
 
 	"unique": true, // XXX: yes
 
+	// ugorji/go/codec uses //go:linkname to access runtime map internals
+	// (makemap, mapassign, mapaccess2, etc.) and has complex initializers
+	// that crash the globals translator. Skip it -- it's a serialization
+	// library with no gosim scheduling interaction.
+	"github.com/ugorji/go/codec": true,
+
 	// Go 1.25 reorganized crypto into crypto/internal/fips140/* sub-packages.
 	// These packages use 2-part //go:linkname directives (fatal, setIndicator,
 	// getIndicator, sha3Unwrap, etc.) pointing into the runtime. When translated,
@@ -131,6 +137,9 @@ var skippedPackagesGo123 = map[string]bool{
 	// golang.org/x/net/http2 uses real net/http types (req.Context() etc.)
 	// which clash with translated/context.Context.
 	"golang.org/x/net/http2": true,
+	// selfcert uses crypto/x509 (skipped) with time.Time and net.IP;
+	// translating it causes type mismatches with real crypto types.
+	"github.com/glycerine/rpc25519/selfcert": true,
 	// net/url uses //go:linkname setpath which causes issues when translated.
 	// Skipping it means all packages (translated and skipped alike) use the
 	// real net/url.URL type, avoiding mismatches with crypto/x509.URIs etc.
@@ -176,6 +185,22 @@ var skippedPackagesGo123 = map[string]bool{
 // at the syscall level, so real grpc still works under simulation.
 var skippedPrefixesGo123 = []string{
 	"google.golang.org/grpc",
+	// quic-go uses crypto/tls (skipped) which uses real net.Conn.
+	// Translating quic-go would cause type mismatches. Like net/http,
+	// gosim intercepts at the syscall level, so real quic-go still works.
+	"github.com/quic-go/quic-go",
+	// golang.org/x/crypto sub-packages depend on skipped stdlib crypto/*
+	// packages (hmac, cipher, etc.). Translating them causes type mismatches
+	// between translated/hash.Hash and hash.Hash etc.
+	"golang.org/x/crypto",
+	// cloudflare/circl is a crypto library depending on skipped crypto packages.
+	"github.com/cloudflare/circl",
+	// zygomys uses reflect with maps; gosim's map replacement causes
+	// translated/reflect.Type vs reflect.Type mismatches.
+	"github.com/glycerine/zygomys",
+	// blake3 has a variable/type name collision (var job *job) that
+	// trips the translator. Pure hash computation, no gosim interaction.
+	"github.com/glycerine/blake3",
 }
 
 var keepAsmPackagesGo123 = map[string]bool{
@@ -189,6 +214,30 @@ var keepAsmPackagesGo123 = map[string]bool{
 
 	"github.com/cespare/xxhash/v2": true,
 
+	// klauspost/compress has assembly-backed functions (CPU detection,
+	// Huffman, S2, Zstd, xxHash). Pure computation, no gosim interaction.
+	"github.com/klauspost/compress/internal/cpuinfo":      true,
+	"github.com/klauspost/compress/huff0":                 true,
+	"github.com/klauspost/compress/s2":                    true,
+	"github.com/klauspost/compress/zstd":                  true,
+	"github.com/klauspost/compress/zstd/internal/xxhash":  true,
+	"github.com/klauspost/cpuid/v2":                       true,
+
+	// Other third-party packages with assembly-backed functions.
+	// All pure computation (compression, hashing, CPU detection).
+	"github.com/glycerine/blake3/guts":      true,
+	"github.com/glycerine/rpc25519/bytes":   true,
+	"github.com/minio/minlz":               true,
+	"github.com/pierrec/lz4/v4/internal/lz4block": true,
+	"github.com/templexxx/cpu":              true,
+
+	// Non-vendored golang.org/x/* modules (vendored versions are separate entries above).
+	"golang.org/x/crypto/argon2":              true,
+	"golang.org/x/crypto/blake2b":             true,
+	"golang.org/x/crypto/chacha20poly1305":    true,
+	"golang.org/x/crypto/internal/poly1305":   true,
+	"golang.org/x/sys/cpu":                    true,
+
 	// internal/runtime/sys contains pure compiler intrinsics (GetCallerPC,
 	// GetCallerSP, GetClosurePtr) and architecture-specific helpers (EnableDIT,
 	// DisableDIT). None interact with gosim scheduling, so pass them through.
@@ -201,7 +250,7 @@ var keepAsmPackagesGo123 = map[string]bool{
 }
 
 var PublicExportHacks = map[string][]string{
-	"encoding/binary":                  {"littleEndian"},
+	"encoding/binary":                  {"littleEndian", "bigEndian"},
 	"internal/poll":                    {"errNetClosing"},
 	"github.com/golang/protobuf/proto": {"enumsByName"},
 }
@@ -412,7 +461,8 @@ func collectImports(roots []*packages.Package, skip map[string]bool, skipPrefixe
 }
 
 func writeGoModFile(modDir string, modFile *modfile.File, writer *outputWriter) {
-	isGosim := modFile.Module.Mod.Path == gosimModPath
+	origModPath := modFile.Module.Mod.Path
+	isGosim := origModPath == gosimModPath
 	// take the existing go.mod and make it work for a sub-directory containing
 	// a module translated
 	if err := modFile.AddModuleStmt("translated"); err != nil {
@@ -439,6 +489,16 @@ func writeGoModFile(modDir string, modFile *modfile.File, writer *outputWriter) 
 					log.Fatal(err)
 				}
 			}
+		}
+
+		// Make the original module available so that skipped sub-packages
+		// (which remain as untranslated imports) can be resolved.
+		// Added after the adjust loop to avoid double-adjusting the path.
+		if err := modFile.AddRequire(origModPath, "v0.0.0"); err != nil {
+			log.Fatal(err)
+		}
+		if err := modFile.AddReplace(origModPath, "", "../../../", ""); err != nil {
+			log.Fatal(err)
 		}
 	}
 

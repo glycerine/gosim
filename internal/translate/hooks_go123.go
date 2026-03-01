@@ -231,4 +231,9 @@ var acceptedgo123Linknames = map[packageSelector]packageSelector{
 	// The real runtime.vgetrandom is available in the translated binary; pass through.
 	{Pkg: "internal/syscall/unix", Selector: "vgetrandom"}: {Pkg: "runtime", Selector: "vgetrandom"},
 	{Pkg: "golang.org/x/sys/unix", Selector: "vgetrandom"}: {Pkg: "runtime", Selector: "vgetrandom"},
+	// runtime_getAuxv retrieves the ELF auxiliary vector; pure data, no gosim interaction.
+	{Pkg: "golang.org/x/sys/cpu", Selector: "runtime_getAuxv"}:  {Pkg: "runtime", Selector: "getAuxv"},
+	{Pkg: "golang.org/x/sys/unix", Selector: "runtime_getAuxv"}: {Pkg: "runtime", Selector: "getAuxv"},
+	// runtime_setCrashFD sets the crash file descriptor; no gosim interaction.
+	{Pkg: "runtime/debug", Selector: "runtime_setCrashFD"}: {Pkg: "runtime", Selector: "setCrashFD"},
 }
