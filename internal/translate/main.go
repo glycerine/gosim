@@ -163,14 +163,14 @@ var skippedPackagesGo123 = map[string]bool{
 	// "internal/synctest" is replaced by gosim's stub (synctestPackage).
 	// The stdlib internal/synctest cannot be imported outside stdlib, so we
 	// skip translating it and redirect imports to our stub via replacedPkgs.
-	"internal/synctest":           true,
-	"testing/internal/testdeps":   true,
-	"internal/reflectlite":        true,
+	"internal/synctest":         true,
+	"testing/internal/testdeps": true,
+	"internal/reflectlite":      true,
 	// internal/race is replaced by gosim's version (racePackage) via replacedPkgs.
 	// Go 1.26 changed stdlib internal/race to use body-less //go:linkname stubs
 	// pushed from runtime, which break when translated. Gosim's version calls
 	// runtime.Race* functions directly.
-	"internal/race": true,
+	"internal/race":               true,
 	gosimruntimePackage:           true,
 	gosimruntimePackage + "_test": true, // eh
 	gosimruntimePackage + ".test": true, // eh
