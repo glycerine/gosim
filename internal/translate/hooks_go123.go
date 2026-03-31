@@ -212,12 +212,12 @@ var hooksGo123 = map[packageSelector]packageSelector{
 	// amd64 only?
 	{Pkg: "syscall", Selector: "gettimeofday"}: {Pkg: hooksGo123Package},
 
-	{Pkg: "time", Selector: "Sleep"}:            {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "now"}:              {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "newTimer"}:         {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "resetTimer"}:       {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "runtimeNano"}:      {Pkg: hooksGo123Package},
-	{Pkg: "time", Selector: "stopTimer"}:        {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "Sleep"}:       {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "now"}:         {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "newTimer"}:    {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "resetTimer"}:  {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "runtimeNano"}: {Pkg: hooksGo123Package},
+	{Pkg: "time", Selector: "stopTimer"}:   {Pkg: hooksGo123Package},
 	// Go 1.25: runtimeNow replaced now on Linux; runtimeIsBubbled added for synctest.
 	{Pkg: "time", Selector: "runtimeNow"}:       {Pkg: hooksGo123Package},
 	{Pkg: "time", Selector: "runtimeIsBubbled"}: {Pkg: hooksGo123Package},
