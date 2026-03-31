@@ -189,7 +189,12 @@ func processLog(testName string, tsanLog []string) string {
 		falsePos++
 		pos = "+"
 	}
-	if !knownFalsePositives[strings.TrimSpace(testName)] {
+	// Extract base test name (before seed suffix like " (seed 1)")
+	baseName := strings.TrimSpace(testName)
+	if idx := strings.Index(baseName, " (seed"); idx >= 0 {
+		baseName = baseName[:idx]
+	}
+	if !knownFalsePositives[baseName] {
 		failed = true
 	}
 	totalTests++
