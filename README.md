@@ -23,6 +23,11 @@ or links; TCP works, but not UDP; IP addresses work, but not hostnames. The API
 can and will change. Now that those warnings are out of the way, please take a
 look at what gosim can do.
 
+# Latest updates: go1.26, but without race detector 
+
+jea: used CC to update to g1.26. The race detector is
+not fully happy but still useful without that.
+
 # Using Gosim
 
 ## From go test to gosim test
